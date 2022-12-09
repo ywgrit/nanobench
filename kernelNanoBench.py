@@ -18,7 +18,9 @@ def readFile(fileName):
       return f.read()
 
 
-def assemble(code, objFile, asmFile='/tmp/ramdisk/asm.s'):
+# def assemble(code, objFile, asmFile='/tmp/ramdisk/asm.s'):
+def assemble(code, objFile, asmFile='/home/wx/asm.s'):
+   print(code)
    try:
       if '|' in code:
          code = code.replace('|15', '.byte 0x66,0x66,0x66,0x66,0x66,0x66,0x2e,0x0f,0x1f,0x84,0x00,0x00,0x00,0x00,0x00;')

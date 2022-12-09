@@ -76,8 +76,16 @@ iTCO_vendor_support_prev_loaded=$?
 prev_nmi_watchdog=$(cat /proc/sys/kernel/nmi_watchdog)
 [ $prev_nmi_watchdog != 0 ] && echo 0 > /proc/sys/kernel/nmi_watchdog
 
-$debug user/nanoBench $@ | $filter_output
-return_value=${PIPESTATUS[0]}
+
+echo "@"
+echo ""
+echo $@
+echo ""
+echo "end of @"
+echo ""
+gdb --args user/nanoBench $@ | $filter_output # 在此处调用nanobench二进制
+# $debug user/nanoBench $@ | $filter_output # 在此处调用nanobench二进制
+return_value=${PIPESTATUS[0]} # $?只能获取管道中最后一条命令的状态码，PIPESTATUS会存储管道中的所有命令执行后的状态码
 
 rm -f asm-*.bin
 
@@ -101,5 +109,12 @@ fi
 if [[ $iTCO_vendor_support_prev_loaded != 0 ]]; then
     modprobe iTCO_vendor_support &>/dev/null
 fi
+
+echo "return_value:"
+echo ""
+echo $return_value
+echo ""
+echo "end of return_value"
+echo ""
 
 exit $return_value

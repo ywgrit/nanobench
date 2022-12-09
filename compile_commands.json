@@ -1,0 +1,30 @@
+[
+  {
+    "arguments": [
+      "/usr/bin/gcc",
+      "-Wall",
+      "-g",
+      "-c",
+      "-o",
+      "nanoBench.o",
+      "../common/nanoBench.c"
+    ],
+    "directory": "/home/wx/Documents/性能分析/性能分析工具/工具/port/nanoBench/user",
+    "file": "/home/wx/Documents/性能分析/性能分析工具/工具/port/nanoBench/common/nanoBench.c",
+    "output": "/home/wx/Documents/性能分析/性能分析工具/工具/port/nanoBench/user/nanoBench.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/gcc",
+      "-Wall",
+      "-g",
+      "-c",
+      "-o",
+      "nanoBench_main.o",
+      "nanoBench_main.c"
+    ],
+    "directory": "/home/wx/Documents/性能分析/性能分析工具/工具/port/nanoBench/user",
+    "file": "/home/wx/Documents/性能分析/性能分析工具/工具/port/nanoBench/user/nanoBench_main.c",
+    "output": "/home/wx/Documents/性能分析/性能分析工具/工具/port/nanoBench/user/nanoBench_main.o"
+  }
+]

@@ -1,8 +1,10 @@
+# TODO(wx): 将汇编代码插入二进制文件中，nop指令需要修改为loongarch版本
 assemble() {
     asm=$1
     filename=$2
     echo ".intel_syntax noprefix" > asm-tmp.s
     echo "$asm" >> asm-tmp.s
+    # 改工程支持的语法形式，即将 |n 转换为n个nop指令
     sed -i "
         s/|15/.byte 0x66,0x66,0x66,0x66,0x66,0x66,0x2e,0x0f,0x1f,0x84,0x00,0x00,0x00,0x00,0x00;/g
         s/|14/.byte 0x66,0x66,0x66,0x66,0x66,0x2e,0x0f,0x1f,0x84,0x00,0x00,0x00,0x00,0x00;/g
@@ -21,6 +23,7 @@ assemble() {
         s/|1/nop;/g
         s/|//g
     " asm-tmp.s
+    # 为什么要这样写？
     as asm-tmp.s -o asm-tmp.o || exit
     objcopy -j .text -O binary asm-tmp.o "$filename"
     rm asm-tmp.*

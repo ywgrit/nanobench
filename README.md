@@ -1,9 +1,18 @@
+## 移植重心！
+
+考虑是否直接写一个循环执行代码即可
+
+重点在弄清汇编是怎么执行的（通过debug mode或者修改nanobench.sh），不一定非得通过csr指令获取性能数据
+
+
 
 # nanoBench
 
 *nanoBench* is a Linux-based tool for running small microbenchmarks on recent Intel and AMD x86 CPUs. The microbenchmarks are evaluated using [hardware performance counters](https://en.wikipedia.org/wiki/Hardware_performance_counter). The reading of the performance counters is implemented in a way that incurs only minimal overhead.
 
 There are two variants of the tool: A user-space implementation and a kernel module. The kernel module makes it possible to benchmark privileged instructions, to use uncore performance counters, and it can allow for more accurate measurement results as it disables interrupts and preemptions during measurements. The disadvantage of the kernel module compared to the user-space variant is that it is quite risky to allow arbitrary code to be executed in kernel space. Therefore, the kernel module should not be used on a production system.
+
+**一般不要用kernel，使用user**
 
 *nanoBench* is used for running the microbenchmarks for obtaining the latency, throughput, and port usage data that is available on [uops.info](http:www.uops.info).
 
@@ -35,9 +44,58 @@ To load the kernel module, run:
 
 ## Usage Examples
 
-The recommended way for using *nanoBench* is with the wrapper scripts `nanoBench.sh` (for the user-space variant) and `kernel-nanoBench.sh` (for the kernel module). The following examples work with both of these scripts. For the kernel module, we also provide a Python wrapper: `kernelNanoBench.py`.
+**The recommended way for using *nanoBench* is with the wrapper scripts `nanoBench.sh` (for the user-space variant) and `kernel-nanoBench.sh` (for the kernel module).** The following examples work with both of these scripts. For the kernel module, we also provide a Python wrapper: `kernelNanoBench.py`.
 
 For obtaining repeatable results, it can help to disable hyper-threading. This can be done with the `disable-HT.sh` script.
+
+## 工作原理
+
+将汇编代码展开多次（unroll_count），并多次测量代码（n_measurements），取性能计数器的平均值
+
+在测量之前，会有几次（warm_up_count）的预热，所以程序总共运行warm_up_count+n_measurements次
+
+可以使用`-asm_init`选项使代码只在最开始运行一次，例如使用`-asm_init`选项初始化寄存器
+
+代码会复制unroll_count份，对于复制的代码，可以循环执行loop_count次。
+
+具体的原理在**Generated Code**这一节
+
+util.sh文件会将汇编编译为二进制，再将二进制的文本段插入到一个临时二进制文件中。
+
+执行流程
+
+```C++
+int run(code, code_init, local_unroll_count):
+    int measurements[n_measurements]
+
+    for i=-warm_up_count to n_measurements
+        save_regs
+        code_init
+        loop 
+        m1 = read_perf_ctrs // stores results in memory, does not modify registers
+        code_late_init
+        for j=0 to loop_count // this line is omitted if loop_count=0
+            code // (copy #1)
+            code // (copy #2)
+             ⋮
+            code // (copy #local_unroll_count)
+        m2 = read_perf_ctrs
+        restore_regs
+        if i >= 0: // ignore warm-up runs
+            measurements[i] = m2 - m1
+
+    return agg(measurements) // apply selected aggregate function
+```
+
+```
+runtime_code的结构
+SAVE_REGS_FALGS
+code_init
+loop(if loop_count > 0)
+code_late_init
+```
+
+
 
 ### Example 1: The ADD Instruction
 
@@ -98,7 +156,7 @@ We will now take a look behind the scenes at the code that *nanoBench* generates
 
     int run(code, code_init, local_unroll_count):
         int measurements[n_measurements]
-
+    
         for i=-warm_up_count to n_measurements
             save_regs
             code_init
@@ -113,7 +171,7 @@ We will now take a look behind the scenes at the code that *nanoBench* generates
             restore_regs
             if i >= 0: // ignore warm-up runs
                 measurements[i] = m2 - m1
-
+    
         return agg(measurements) // apply selected aggregate function
 
 `run(...)` is executed twice: The first time with `local_unroll_count = unroll_count`, and the second time with `local_unroll_count = 2 * unroll_count`. If the `-basic_mode` options is used, the first execution is with no instructions between `m1 = read_perf_ctrs` and `m2 = read_perf_ctrs`, and the second with `local_unroll_count = unroll_count`.
