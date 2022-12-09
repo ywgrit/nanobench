@@ -12,6 +12,13 @@
 *.tar.gz
 .vscode
 
+# tmp
+asm-code.bin
+
+# compile
+compile_commands.json
+.ccls-cache
+
 # Kernel ignore files/directories
 kernel/.cache.mk
 kernel/.tmp_versions/
